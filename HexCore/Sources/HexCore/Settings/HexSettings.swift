@@ -14,7 +14,10 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		.init(pattern: "uh+"),
 		.init(pattern: "um+"),
 		.init(pattern: "er+"),
-		.init(pattern: "hm+")
+		.init(pattern: "hm+"),
+		.init(pattern: "erm+"),
+		.init(pattern: "嗯+"),
+		.init(pattern: "呃+")
 	]
 
 	public static var defaultPasteLastTranscriptHotkeyDescription: String {

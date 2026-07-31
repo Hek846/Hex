@@ -15,11 +15,40 @@ import SwiftUI
 
 private let pasteboardLogger = HexLog.pasteboard
 
+enum SelectedTextReadError: Error, Equatable, Sendable {
+    case focusedElementNotFound
+    case selectedTextUnsupported
+    case emptySelection
+    case unexpectedValueType
+}
+
+enum SelectedTextReader {
+    static func interpret(copyError: AXError, value: Any?) -> Result<String, SelectedTextReadError> {
+        switch copyError {
+        case .success:
+            return interpretSelectedTextValue(value)
+        case .attributeUnsupported, .noValue, .invalidUIElement, .cannotComplete, .apiDisabled:
+            return .failure(.selectedTextUnsupported)
+        default:
+            return .failure(.selectedTextUnsupported)
+        }
+    }
+
+    static func interpretSelectedTextValue(_ value: Any?) -> Result<String, SelectedTextReadError> {
+        guard let value else { return .failure(.selectedTextUnsupported) }
+        guard let string = value as? String else { return .failure(.unexpectedValueType) }
+        return string.isEmpty ? .failure(.emptySelection) : .success(string)
+    }
+}
+
 @DependencyClient
 struct PasteboardClient {
     var paste: @Sendable (String) async -> Void
     var copy: @Sendable (String) async -> Void
     var sendKeyboardCommand: @Sendable (KeyboardCommand) async -> Void
+    var selectedText: @Sendable () async -> Result<String, SelectedTextReadError> = {
+        .failure(.focusedElementNotFound)
+    }
 }
 
 extension PasteboardClient: DependencyKey {
@@ -34,9 +63,15 @@ extension PasteboardClient: DependencyKey {
             },
             sendKeyboardCommand: { command in
                 await live.sendKeyboardCommand(command)
+            },
+            selectedText: {
+                await MainActor.run {
+                    PasteboardClientLive.readSelectedText()
+                }
             }
         )
     }
+
 }
 
 extension DependencyValues {
@@ -345,6 +380,43 @@ struct PasteboardClientLive {
         case focusedElementNotFound
         case elementDoesNotSupportTextEditing
         case failedToInsertText
+    }
+
+    // MARK: - Selected text (read-only)
+
+    // Foundation for Command Mode: https://github.com/kitlangton/Hex/issues/197
+
+    @MainActor
+    static func readSelectedText() -> Result<String, SelectedTextReadError> {
+        let systemWideElement = AXUIElementCreateSystemWide()
+        var focusedElementRef: CFTypeRef?
+        let focusedError = AXUIElementCopyAttributeValue(
+            systemWideElement,
+            kAXFocusedUIElementAttribute as CFString,
+            &focusedElementRef
+        )
+
+        guard focusedError == .success, let focusedElementRef else {
+            pasteboardLogger.debug("Selected text unavailable: focused element not found (ax=\(focusedError.rawValue))")
+            return .failure(.focusedElementNotFound)
+        }
+
+        let focusedElement = focusedElementRef as! AXUIElement
+        var selectedTextRef: CFTypeRef?
+        let selectedError = AXUIElementCopyAttributeValue(
+            focusedElement,
+            kAXSelectedTextAttribute as CFString,
+            &selectedTextRef
+        )
+
+        let result = SelectedTextReader.interpret(copyError: selectedError, value: selectedTextRef)
+        switch result {
+        case .success:
+            pasteboardLogger.debug("Read non-empty selected text from focused element")
+        case .failure(let error):
+            pasteboardLogger.debug("Selected text read failed: \(String(describing: error))")
+        }
+        return result
     }
     
     static func insertTextAtCursor(_ text: String) throws {
