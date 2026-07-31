@@ -145,6 +145,20 @@ FluidAudio models reside under `Application Support/FluidAudio/Models`.
 - Follow up with as much context as needed in the body. Include the rationale, notable tradeoffs, relevant logs, or reproduction steps—future debugging benefits from having the full story directly in git history.
 - Reference any related GitHub issues in the body if the change tracks ongoing work.
 
+### Agent contribution trace
+
+Every commit that includes work performed by an AI coding agent must end with these Git trailers:
+
+```
+Agent: <agent name>
+Agent-Task: <short, user-facing description of the work>
+```
+
+- Use the agent's actual name, such as `Grok`, `Kimi`, `Codex`, or `GitHub Copilot`; if more than one agent materially contributed, include one `Agent:` line for each and a matching `Agent-Task:` line.
+- Keep `Agent-Task` brief and concrete. It should describe the completed contribution, not the delegation prompt or an internal session identifier.
+- The human developer remains the normal Git author and committer. Do not use `Co-authored-by` for AI-agent attribution.
+- Do not add a trailer merely for review, brainstorming, or a failed/no-change run. Add it only when the agent's code, tests, documentation, or configuration is included in the commit.
+
 ## Releasing a New Version
 
 Releases are automated via a local CLI tool that handles building, signing, notarizing, and uploading.
