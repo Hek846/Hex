@@ -52,6 +52,18 @@ public struct HexSettings: Codable, Equatable, Sendable {
 	public var wordRemappings: [WordRemapping]
 	public var lowercaseTranscripts: Bool
 	public var removePunctuation: Bool
+	/// Master switch for local proofreading. Defaults to off so a fresh
+	/// install never sends selected text anywhere.
+	public var localProofreadingEnabled: Bool
+	/// Base URL of the OpenAI-compatible endpoint (e.g. the Jetson running
+	/// Ollama). No request is made while proofreading is disabled.
+	public var localProofreadingBaseURL: String
+	/// Model identifier requested from the endpoint. Empty means "not
+	/// configured"; the proofreading client treats that as unavailable rather
+	/// than guessing a model.
+	public var localProofreadingModel: String
+	/// Timeout in seconds for a single proofreading request.
+	public var localProofreadingRequestTimeout: Double
 
 	private mutating func normalizeDoubleTapSettings() {
 		if !doubleTapLockEnabled {
@@ -85,7 +97,11 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		wordRemovals: [WordRemoval] = HexSettings.defaultWordRemovals,
 		wordRemappings: [WordRemapping] = [],
 		lowercaseTranscripts: Bool = false,
-		removePunctuation: Bool = false
+		removePunctuation: Bool = false,
+		localProofreadingEnabled: Bool = false,
+		localProofreadingBaseURL: String = "http://127.0.0.1:11434",
+		localProofreadingModel: String = "",
+		localProofreadingRequestTimeout: Double = 30
 	) {
 		self.soundEffectsEnabled = soundEffectsEnabled
 		self.soundEffectsVolume = soundEffectsVolume
@@ -113,6 +129,10 @@ public struct HexSettings: Codable, Equatable, Sendable {
 		self.wordRemappings = wordRemappings
 		self.lowercaseTranscripts = lowercaseTranscripts
 		self.removePunctuation = removePunctuation
+		self.localProofreadingEnabled = localProofreadingEnabled
+		self.localProofreadingBaseURL = localProofreadingBaseURL
+		self.localProofreadingModel = localProofreadingModel
+		self.localProofreadingRequestTimeout = localProofreadingRequestTimeout
 		normalizeDoubleTapSettings()
 	}
 
@@ -163,6 +183,10 @@ private enum HexSettingKey: String, CodingKey, CaseIterable {
 	case wordRemappings
 	case lowercaseTranscripts
 	case removePunctuation
+	case localProofreadingEnabled
+	case localProofreadingBaseURL
+	case localProofreadingModel
+	case localProofreadingRequestTimeout
 }
 
 private struct SettingsField<Value: Codable & Sendable> {
@@ -297,6 +321,10 @@ private enum HexSettingsSchema {
 			default: defaults.wordRemappings
 		).eraseToAny(),
 		SettingsField(.lowercaseTranscripts, keyPath: \.lowercaseTranscripts, default: defaults.lowercaseTranscripts).eraseToAny(),
-		SettingsField(.removePunctuation, keyPath: \.removePunctuation, default: defaults.removePunctuation).eraseToAny()
+		SettingsField(.removePunctuation, keyPath: \.removePunctuation, default: defaults.removePunctuation).eraseToAny(),
+		SettingsField(.localProofreadingEnabled, keyPath: \.localProofreadingEnabled, default: defaults.localProofreadingEnabled).eraseToAny(),
+		SettingsField(.localProofreadingBaseURL, keyPath: \.localProofreadingBaseURL, default: defaults.localProofreadingBaseURL).eraseToAny(),
+		SettingsField(.localProofreadingModel, keyPath: \.localProofreadingModel, default: defaults.localProofreadingModel).eraseToAny(),
+		SettingsField(.localProofreadingRequestTimeout, keyPath: \.localProofreadingRequestTimeout, default: defaults.localProofreadingRequestTimeout).eraseToAny()
 	]
 }

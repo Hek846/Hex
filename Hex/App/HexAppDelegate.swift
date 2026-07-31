@@ -8,6 +8,7 @@ private let cacheLogger = HexLog.caches
 class HexAppDelegate: NSObject, NSApplicationDelegate {
 	var invisibleWindow: InvisibleWindow?
 	var settingsWindow: NSWindow?
+	var proofreadingPanel: NSPanel?
 	var statusItem: NSStatusItem!
 	private var launchedAtLogin = false
 
@@ -135,6 +136,34 @@ class HexAppDelegate: NSObject, NSApplicationDelegate {
 		settingsWindow.makeKeyAndOrderFront(nil)
 		NSApp.activate(ignoringOtherApps: true)
 		self.settingsWindow = settingsWindow
+	}
+
+	func presentProofreadingView() {
+		let proofreadingStore = HexApp.appStore.scope(state: \.proofreading, action: \.proofreading)
+		if let proofreadingPanel {
+			proofreadingPanel.contentView = NSHostingView(rootView: ProofreadingPanelView(store: proofreadingStore))
+			proofreadingPanel.orderFrontRegardless()
+			proofreadingStore.send(.checkSelectedText)
+			return
+		}
+
+		let panel = NSPanel(
+			contentRect: .init(x: 0, y: 0, width: 392, height: 440),
+			styleMask: [.borderless, .nonactivatingPanel],
+			backing: .buffered,
+			defer: false
+		)
+		panel.isFloatingPanel = true
+		panel.level = .floating
+		panel.hidesOnDeactivate = false
+		panel.isOpaque = false
+		panel.backgroundColor = .clear
+		panel.hasShadow = false
+		panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+		panel.contentView = NSHostingView(rootView: ProofreadingPanelView(store: proofreadingStore))
+		panel.center()
+		panel.orderFrontRegardless()
+		proofreadingPanel = panel
 	}
 
 	@objc private func handleAppModeUpdate() {

@@ -85,6 +85,11 @@ struct SettingsFeature {
     case setSoundEffectsEnabled(Bool)
     case setSoundEffectsVolume(Double)
 
+    // Local proofreading
+    case setLocalProofreadingEnabled(Bool)
+    case setLocalProofreadingBaseURL(String)
+    case setLocalProofreadingModel(String)
+
     // Permission delegation (forwarded to AppFeature)
     case requestMicrophone
     case requestAccessibility
@@ -504,6 +509,18 @@ struct SettingsFeature {
 
       case let .setSoundEffectsVolume(volume):
         state.$hexSettings.withLock { $0.soundEffectsVolume = volume }
+        return .none
+
+      case let .setLocalProofreadingEnabled(enabled):
+        state.$hexSettings.withLock { $0.localProofreadingEnabled = enabled }
+        return .none
+
+      case let .setLocalProofreadingBaseURL(baseURL):
+        state.$hexSettings.withLock { $0.localProofreadingBaseURL = baseURL }
+        return .none
+
+      case let .setLocalProofreadingModel(model):
+        state.$hexSettings.withLock { $0.localProofreadingModel = model }
         return .none
 
       // Permission requests

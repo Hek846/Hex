@@ -31,12 +31,14 @@ The app uses **The Composable Architecture (TCA)** for state management. Key arc
 - `TranscriptionFeature`: Core recording and transcription logic
 - `SettingsFeature`: User preferences and configuration
 - `HistoryFeature`: Transcription history management
+- `ProofreadingFeature`: Local-first proofreading of selected text
 
 ### Dependency Clients
 - `TranscriptionClient`: WhisperKit integration for ML transcription
 - `RecordingClient`: AVAudioRecorder wrapper for audio capture
 - `PasteboardClient`: Clipboard operations
 - `KeyEventMonitorClient`: Global hotkey monitoring via Sauce framework
+- `ProofreadingClient`: OpenAI-compatible chat endpoint client for local proofreading
 
 ### Key Dependencies
 - **WhisperKit**: Core ML transcription (tracking main branch)
@@ -63,6 +65,8 @@ The app uses **The Composable Architecture (TCA)** for state management. Key arc
 5. **Permissions**: Requires audio input and automation entitlements (see `Hex.entitlements`)
 
 6. **Logging**: All diagnostics should use the unified logging helper `HexLog` (`HexCore/Sources/HexCore/Logging.swift`). Pick an existing category (e.g., `.transcription`, `.recording`, `.settings`) or add a new case so Console predicates stay consistent. Avoid `print` and prefer privacy annotations (`, privacy: .private`) for anything potentially sensitive like transcript text or file paths.
+
+7. **Local Proofreading**: "Check Selected Text" in the menu bar reads the current selection via Accessibility and sends it only to a user-configured, OpenAI-compatible local endpoint (e.g. Ollama); nothing ships to a cloud provider. Suggestions appear in a non-activating `NSPanel` and can be applied back or copied. Disabled by default (`localProofreadingEnabled` in `HexSettings`).
 
 ## Models (2025‑11)
 
@@ -121,6 +125,7 @@ FluidAudio models reside under `Application Support/FluidAudio/Models`.
 - Repeated mic prompts during debug: ensure Debug signing uses "Apple Development" so TCC sticks
 - Sandbox network errors (‑1003): add `com.apple.security.network.client = true` (already set)
 - Parakeet not detected: ensure it resides under the container path above; downloading from Hex places it correctly.
+- App-target tests (`xcodebuild test -scheme Hex`) require a Mac Development signing certificate; on machines without one, test linking/execution fails (including pre-existing IssueReporting/PerceptionCore linkage errors when building tests with signing disabled). Use `cd HexCore && swift test` for signing-free coverage.
 
 ## Changelog Workflow Expectations
 

@@ -16,6 +16,10 @@ struct HexApp: App {
         MenuBarExtra {
             MenuBarCopyLastTranscriptButton()
 
+            Button("Check Selected Text") {
+                appDelegate.presentProofreadingView()
+            }
+
             Button("Settings…") {
                 appDelegate.presentSettingsView()
             }.keyboardShortcut(",")
@@ -46,6 +50,10 @@ struct HexApp: App {
 				Button("Settings…") {
 					appDelegate.presentSettingsView()
 				}.keyboardShortcut(",")
+
+				Button("Check Selected Text") {
+					appDelegate.presentProofreadingView()
+				}
 			}
 
 			CommandGroup(replacing: .help) {}

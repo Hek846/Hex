@@ -27,6 +27,7 @@ struct AppFeature {
 	@ObservableState
 	struct State {
 		var transcription: TranscriptionFeature.State = .init()
+		var proofreading: ProofreadingFeature.State = .init()
 		var settings: SettingsFeature.State = .init()
 		var history: HistoryFeature.State = .init()
 		var activeTab: ActiveTab = .settings
@@ -42,6 +43,7 @@ struct AppFeature {
   enum Action: BindableAction {
     case binding(BindingAction<State>)
     case transcription(TranscriptionFeature.Action)
+    case proofreading(ProofreadingFeature.Action)
     case settings(SettingsFeature.Action)
     case history(HistoryFeature.Action)
     case setActiveTab(ActiveTab)
@@ -65,6 +67,10 @@ struct AppFeature {
 
     Scope(state: \.transcription, action: \.transcription) {
       TranscriptionFeature()
+    }
+
+    Scope(state: \.proofreading, action: \.proofreading) {
+      ProofreadingFeature()
     }
 
     Scope(state: \.settings, action: \.settings) {
@@ -111,6 +117,9 @@ struct AppFeature {
 		.cancellable(id: CancelID.modelMissingFlash, cancelInFlight: true)
 
       case .transcription:
+        return .none
+
+      case .proofreading:
         return .none
 
       case .settings(.requestMicrophone):
